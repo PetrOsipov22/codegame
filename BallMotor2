@@ -1,0 +1,114 @@
+public class BallMotor : MonoBehaviour
+{
+
+    public GameObject ball;
+    public int score = 0;
+    public int record = 0;
+    public Text ScoreText;
+    public int JumpForce;
+    public bool IsGround;
+    public float moveSpeed = 5.0f;
+    public float drag = 0.5f;
+    public float terminalRotationSpeed = 25.0f;
+    public Vector3 MoveVector { set; get; }
+    public VirtualJoystick joystick;
+    public Rigidbody thisRigidbody;
+    
+
+    void Start()
+    {
+        Application.targetFrameRate = 60;
+        thisRigidbody = gameObject.AddComponent<Rigidbody>();
+        thisRigidbody.maxAngularVelocity = terminalRotationSpeed;
+        thisRigidbody.drag = drag;
+       
+    }
+    
+    public void FixedUpdate()
+    {
+        MoveVector = PoolInput();
+        Move();
+        Jump();
+        Money();
+        ScoreText.text = "Золото:  " + score;
+
+    }
+    public void Money()
+    {
+        if (PlayerPrefs.HasKey("savescore"))
+        {
+            record = PlayerPrefs.GetInt("savescore");
+        }
+        if (score > record)
+        {
+            PlayerPrefs.SetInt("savescore", score);
+            PlayerPrefs.Save();
+            Debug.Log("Save");
+        }
+       
+
+
+    }
+    
+
+    public void Move()
+    {
+        thisRigidbody.AddForce((MoveVector * moveSpeed));
+    }
+
+  
+    private Vector3 PoolInput()
+    {
+        Vector3 dir = Vector3.zero;
+        //	dir.x = Input.GetAxis ("Horizantal");
+        //	dir.z = Input.GetAxis ("Vertical");
+        dir.x = joystick.Horizontal();
+        dir.z = joystick.Vertical();
+        if (dir.magnitude > 1)
+            dir.Normalize();
+        return dir;
+    }
+ 
+
+    public void Jump()
+    {
+        Ray ray = new Ray(gameObject.transform.position, Vector3.down);
+        RaycastHit rh;
+        if (Physics.Raycast(ray, out rh, 0.5f))
+        {
+            IsGround = true;
+
+        }
+        else
+        {
+            IsGround = false;
+
+        }
+        if (IsGround) // for PC Input.GetKeyDown(KeyCode.Space)
+        {
+            thisRigidbody.AddForce(Vector3.up * JumpForce);
+        }
+
+    }
+
+  
+    public void lanternball() // on & off Component<Light> 
+    {
+        GetComponent<Light>().enabled = !GetComponent<Light>().enabled;
+    }
+
+ 
+
+    void OnTriggerEnter(Collider other) // Сollecting coins
+    {
+        if (other.gameObject.CompareTag("Coins"))
+        {
+            Destroy(other.gameObject);
+            GetComponent<AudioSource>().PlayOneShot(coinsup);
+            //
+
+            score++;
+
+        }
+    }
+}
